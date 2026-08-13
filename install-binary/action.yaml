@@ -39,10 +39,21 @@ inputs:
     description: "Installation path"
     required: true
 
+  use_cache:
+    description: "Use binary cache"
+    default: false
+
 runs:
   using: composite
   steps:
+    - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      if: "${{ inputs.use_cache == true }}"
+      with:
+        path: "${{ inputs.install_path }}"
+        key: "${{ inputs.sha256sum }}"
+
     - name: Install the executable binary from GitHub Releases
+      id: install
       shell: bash
       env:
         DOWNLOAD_URL: "https://${{ inputs.hostname }}/${{ inputs.owner }}/${{ inputs.repo }}/releases/download/${{ inputs.version }}/${{ inputs.archive }}"
@@ -53,11 +64,19 @@ runs:
 
         INSTALL_FILE: "${{ inputs.install_file }}"
         INSTALL_PATH: "${{ inputs.install_path }}"
+
+        USE_CACHE: "${{ inputs.use_cache }}"
       run: |
-        set -xeuo pipefail
+        set -euo pipefail
 
         declare cwd
         cwd="$(pwd)"
+
+        if [[ "${USE_CACHE:-}" = "true" ]] && [[ -x "${cwd}/${INSTALL_PATH}" ]]; then
+          echo "skipped=true" >> "$GITHUB_OUTPUT"
+          echo "The cache file already exists. Skiping installation..."
+          exit 0
+        fi
 
         declare tmp
         tmp="$(mktemp -d)"
@@ -75,3 +94,11 @@ runs:
 
         cd "${cwd}"
         rm "${tmp}" -rd
+
+        echo "skipped=false" >> "$GITHUB_OUTPUT"
+
+    - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      if: "${{ inputs.use_cache == true && steps.install.output.skipped == false }}"
+      with:
+        path: "${{ inputs.install_path }}"
+        key: "${{ inputs.sha256sum }}"
