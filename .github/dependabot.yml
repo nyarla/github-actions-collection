@@ -5,6 +5,8 @@ updates:
       prefix: "chore(gh-actions)"
     labels:
       - "dependencies(gh-actions)"
+    directories:
+      - "/"
     schedule:
       interval: "weekly"
       day: "monday"
