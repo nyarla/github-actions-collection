@@ -1,0 +1,65 @@
+name: Install the executable binary
+description: Install the executable binary from GitHub Releases
+
+inputs:
+  hostname:
+    required: true
+    default: "github.com"
+  owner:
+    required: true
+  repo:
+    required: true
+  version:
+    required: true
+  archive:
+    required: true
+  sha256sum:
+    required: true
+
+  extract_command:
+    required: true
+    default: tar
+  extract_flags:
+    required: true
+    default: "-zxvf"
+  extract_file:
+    required: true
+  install_path:
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Install the executable binary from GitHub Releases
+      shell: bash
+      env:
+        DOWNLOAD_URL: "https://${{ inputs.hostname }}/${{ inputs.owner }}/${{ inputs.repo }}/releases/download/${{ inputs.version }}/${{ inputs.archive }}"
+        DOWNLOAD_SHA256SUM: "${{ inputs.sha256sum }}"
+
+        EXTRACT_COMMAND: "${{ inputs.extract_command }}"
+        EXTRACT_FLAGS: "${{ inputs.extract_flags }}"
+        EXTRACT_FILE: "${{ inputs.extract_file }}"
+
+        INSTALL_PATH: "${{ inputs.install_path }}"
+      run: |
+        set -xeuo pipefail
+
+        declare cwd
+        cwd="$(pwd)"
+
+        declare tmp
+        tmp="$(mktemp -d)"
+        cd "${tmp}"
+
+        cat <<... > sha256sum.txt
+        ${DOWNLOAD_SHA256SUM} payload.data
+        ...
+
+        curl -L -o payload.data "${DOWNLOAD_URL}"
+        sha256sum --check sha256sum.txt
+
+        "${EXTRACT_COMMAND}" "${EXTRACT_FLAGS}" payload.data
+        install -Dm755 "${EXTRACT_FILE}" "${cwd}/${INSTALL_PATH}"
+
+        cd "${cwd}"
+        rm "${tmp}" -rd

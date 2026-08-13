@@ -1,0 +1,50 @@
+name: Test install binary workflow
+
+permissions: {}
+
+on:
+  pull_request:
+    branches: ["*"]
+    paths:
+      - "install-binary/**"
+      - ".github/workflows/test-install-binary.yml"
+  push:
+    branches:
+      - main
+  workflow_dispatch: {}
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}"
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test install the executable binary
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: "false"
+
+      - uses: ./install-binary
+        with:
+          owner: rhysd
+          repo: actionlint
+          version: v1.7.12
+          archive: actionlint_1.7.12_linux_amd64.tar.gz
+          sha256sum: "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8"
+
+          extract_command: "tar"
+          extract_flags: "-zxvf"
+          extract_file: actionlint
+
+          install_path: .github/.bin/actionlint
+
+      - run: |
+          set -xeuo pipefail
+
+          test -e .github/.bin/actionlint || exit 1
+          test -x .github/.bin/actionlint || exit 1

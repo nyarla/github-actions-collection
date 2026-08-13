@@ -1,0 +1,12 @@
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    commit-message:
+      prefix: "chore(gh-actions)"
+    labels:
+      - "dependencies(gh-actions)"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "10:00"
+      timezone: "Asia/Tokyo"
