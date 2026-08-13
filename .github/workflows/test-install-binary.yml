@@ -39,8 +39,8 @@ jobs:
 
           extract_command: "tar"
           extract_flags: "-zxvf"
-          extract_file: actionlint
 
+          install_file: actionlint
           install_path: .github/.bin/actionlint
 
       - run: |

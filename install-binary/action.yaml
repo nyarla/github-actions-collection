@@ -1,30 +1,42 @@
 name: Install the executable binary
 description: Install the executable binary from GitHub Releases
 
+author: OKAMURA Naoki
+
 inputs:
   hostname:
+    description: "The GitHub hostname (useful for GitHub Enterprise) (default: github.com)"
     required: true
     default: "github.com"
   owner:
+    description: "The GitHub repository owner name to install from"
     required: true
   repo:
+    description: "The GitHub repository name"
     required: true
   version:
+    description: "Version string for the installation binary"
     required: true
   archive:
+    description: "Path to archive file"
     required: true
   sha256sum:
+    description: "SHA-256 checksum for downloaded archive"
     required: true
 
   extract_command:
+    description: "The command name for extracting files"
     required: true
     default: tar
   extract_flags:
+    description: "The command-line flags fort the extraction command"
     required: true
     default: "-zxvf"
-  extract_file:
+  install_file:
+    description: "Installation filename"
     required: true
   install_path:
+    description: "Installation path"
     required: true
 
 runs:
@@ -38,8 +50,8 @@ runs:
 
         EXTRACT_COMMAND: "${{ inputs.extract_command }}"
         EXTRACT_FLAGS: "${{ inputs.extract_flags }}"
-        EXTRACT_FILE: "${{ inputs.extract_file }}"
 
+        INSTALL_FILE: "${{ inputs.install_file }}"
         INSTALL_PATH: "${{ inputs.install_path }}"
       run: |
         set -xeuo pipefail
@@ -59,7 +71,7 @@ runs:
         sha256sum --check sha256sum.txt
 
         "${EXTRACT_COMMAND}" "${EXTRACT_FLAGS}" payload.data
-        install -Dm755 "${EXTRACT_FILE}" "${cwd}/${INSTALL_PATH}"
+        install -Dm755 "${INSTALL_FILE}" "${cwd}/${INSTALL_PATH}"
 
         cd "${cwd}"
         rm "${tmp}" -rd
