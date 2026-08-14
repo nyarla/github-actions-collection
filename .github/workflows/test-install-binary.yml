@@ -6,8 +6,8 @@ on:
   pull_request:
     branches: ["*"]
     paths:
-      - "install-binary/**"
       - ".github/workflows/test-install-binary.yml"
+      - "install-binary/action.yaml"
   push:
     branches:
       - main
