@@ -1,0 +1,144 @@
+name: Linting GitHub Actions
+
+permissions: {}
+
+on:
+  pull_request:
+    branches: ["*"]
+    paths:
+      - "install-binary/**"
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}"
+  cancel-in-progress: true
+
+jobs:
+  actionlint:
+    name: Linting with actionlint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -yq --no-install-recommends --no-install-suggests shellcheck
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: "false"
+      - uses: ./install-binary
+        with:
+          owner: rhysd
+          repo: actionlint
+          version: v1.7.12
+          archive: actionlint_1.7.12_linux_amd64.tar.gz
+          sha256sum: 8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
+
+          extract_command: "tar"
+          extract_flags: "-zxvf"
+
+          install_file: actionlint
+          install_path: .github/.bin/actionlint
+
+          use_cache: true
+      - name: Linting with actionlint
+        run: |
+          .github/.bin/actionlint -color ./.github/workflows/*.yml
+
+  ghalint:
+    name: Linting with ghalint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: "false"
+      - uses: ./install-binary
+        with:
+          owner: suzuki-shunsuke
+          repo: ghalint
+          version: v1.5.6
+          archive: ghalint_1.5.6_linux_amd64.tar.gz
+          sha256sum: 98ee0e3330de7286f470d1e89c03ff7ce70d7a5998ba0f15969c400447be579c
+
+          extract_command: "tar"
+          extract_flags: "-zxvf"
+
+          install_file: ghalint
+          install_path: .github/.bin/ghalint
+
+          use_cache: true
+      - run: |
+          .github/.bin/ghalint run
+          .github/.bin/ghalint run-action ./*/action.yaml
+
+  ghasec:
+    name: Linting with ghasec
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: "false"
+      - uses: ./install-binary
+        with:
+          owner: koki-develop
+          repo: ghasec
+          version: v0.17.0
+          archive: ghasec_Linux_x86_64.tar.gz
+          sha256sum: 6dadfa42b2b0637623d1f2b61a431e639846f1fe9580559a27176360f38924d8
+
+          extract_command: tar
+          extract_flags: "-zxvf"
+
+          install_file: ghasec
+          install_path: .github/.bin/ghasec
+
+          use_cache: true
+      - run: |
+          .github/.bin/ghasec ./*/action.yaml .github/workflows/*.yml --format=github-actions
+
+  zizmor:
+    name: Linting with zizmor
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        persona:
+          - regular
+          - pedantic
+          - auditor
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: "false"
+      - uses: ./install-binary
+        with:
+          owner: zizmorcore
+          repo: zizmor
+          version: v1.26.1
+          archive: zizmor-x86_64-unknown-linux-gnu.tar.gz
+          sha256sum: 8556289a64e7aaf2400cd516f61a471aa91c5902cc56ad96a82fd12f90c2ef73
+
+          extract_command: tar
+          extract_flags: "-zxvf"
+
+          install_file: zizmor
+          install_path: .github/.bin/zizmor
+
+          use_cache: true
+      - env:
+          PERSONA: "${{ matrix.persona }}"
+        run: |
+          .github/.bin/zizmor --persona "${PERSONA}" .github/workflows/*.yml
+          .github/.bin/zizmor --persona "${PERSONA}" ./*/action.yaml

@@ -41,7 +41,6 @@ inputs:
 
   use_cache:
     description: "Use binary cache"
-    default: false
 
 runs:
   using: composite
